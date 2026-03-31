@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.top_bar.setStyleSheet("background-color: #0d0d0d; border-bottom: 1px solid #222; padding: 0 20px;")
         t_l = QHBoxLayout(self.top_bar)
         
-        self.title_label = QLabel("SYSTEM STATUS: ONLINE")
+        self.title_label = QLabel("MOCK FEED ACTIVE: DASHBOARD OVERVIEW")
         self.title_label.setStyleSheet("color: #777; font-weight: bold; font-size: 14px;")
         t_l.addWidget(self.title_label)
         
@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentIndex(index)
         # Update title based on view
         titles = ["DASHBOARD OVERVIEW", "CAMERA MANAGEMENT", "PERSON SEARCH", "ANOMALY MONITORING"]
-        self.title_label.setText(f"SYSTEM STATUS: ONLINE | {titles[index]}")
+        self.title_label.setText(f"MOCK FEED ACTIVE | {titles[index]}")
 
 if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication

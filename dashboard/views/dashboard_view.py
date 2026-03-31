@@ -28,7 +28,7 @@ class DashboardView(QWidget):
         self.content_row.setSpacing(20)
         
         # Video Container
-        self.live_preview = StreamContainer("LIVE SYSTEM OVERVIEW")
+        self.live_preview = StreamContainer("SIMULATED SYSTEM OVERVIEW")
         self.content_row.addWidget(self.live_preview, stretch=2)
         
         # Alerts Sidebar (Recent)

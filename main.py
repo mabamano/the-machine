@@ -1,6 +1,7 @@
 import cv2
 import sys
 import time
+import numpy as np
 from PySide6.QtCore import QTimer, Qt
 from detection.main import DetectionModule
 from face_recognition.main import FaceRecognitionModule
@@ -16,11 +17,16 @@ class SmartSurveillanceSystem:
         self.behavior_mod = BehaviorModule(loitering_time=10.0, zone_rect=(50, 50, 400, 480))
         self.dashboard_mod = DashboardModule()
         
-        # 2. Camera Setup
-        self.cap = cv2.VideoCapture(camera_idx)
+        # 2. Mock Feed Setup
+        # Default to a mock video file if provided, otherwise a placeholder
+        self.video_source = camera_idx if isinstance(camera_idx, int) else 0
+        self.cap = cv2.VideoCapture(self.video_source)
+        
         if not self.cap.isOpened():
-            print(f"Error: Camera {camera_idx} not found.")
-            sys.exit(1)
+            print(f"Warning: Mock source {self.video_source} not found. using black frames.")
+            self.placeholder_mode = True
+        else:
+            self.placeholder_mode = False
             
         # 3. Processing Loop setup
         self.timer = QTimer()
@@ -30,8 +36,19 @@ class SmartSurveillanceSystem:
 
     def process_frame(self):
         ret, frame = self.cap.read()
+        
+        # --- Handle Playback Loop or Mock ---
         if not ret:
-            return
+            # If video ends, restart for mock loop
+            if not self.placeholder_mode:
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = self.cap.read()
+            
+            # If still no frame (placeholder mode or camera bug)
+            if not ret:
+                frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(frame, "MOCK FEED PLACEHOLDER", (100, 240), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             
         # --- PHASE 1: Detection & Tracking ---
         # Get annotated frame (with boxes) and raw tracking data

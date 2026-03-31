@@ -1,0 +1,11 @@
+opencv-python
+opencv-contrib-python
+ultralytics
+facenet-pytorch
+torch
+torchvision
+PySide6
+numpy
+Pillow
+scipy
+lapx

@@ -16,5 +16,11 @@
         "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/running.mp4",
         "camera_id": "cam_003_e92c",
         "status": "active"
+    },
+    {
+        "name": "bala",
+        "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/bala.mp4",
+        "camera_id": "cam_004_1590",
+        "status": "active"
     }
 ]

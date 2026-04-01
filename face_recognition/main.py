@@ -22,9 +22,15 @@ class FaceRecognitionModule:
         boxes, probs = self.detector.detect(frame)
         results = []
         
+        if boxes is None or len(boxes) == 0:
+            return results
+            
         for box, prob in zip(boxes, probs):
             if prob > 0.9:  # Detection confidence
                 x1, y1, x2, y2 = map(int, box)
+                # Bounds check
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
                 face_crop = frame[y1:y2, x1:x2]
                 
                 if face_crop.size > 0:
@@ -34,6 +40,30 @@ class FaceRecognitionModule:
                         results.append((name, confidence, box))
                         
         return results
+
+    def add_target_person(self, name, image_path):
+        """
+        Dynamically adds a person from an image to the recognition database.
+        """
+        image = cv2.imread(image_path)
+        if image is None: return False
+        
+        boxes, probs = self.detector.detect(image)
+        if boxes is not None and len(boxes) > 0:
+            box = boxes[0] # Use the best face detected
+            x1, y1, x2, y2 = map(int, box)
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(image.shape[1], x2), min(image.shape[0], y2)
+            face_crop = image[y1:y2, x1:x2]
+            
+            if face_crop.size > 0:
+                embedding = self.model.get_embedding(face_crop)
+                if embedding is not None:
+                    self.db.add_embedding(name, embedding)
+                    self.db.save()
+                    print(f"Dynamic Reg: {name} added to database.")
+                    return True
+        return False
 
 def test_module(video_path=None):
     """

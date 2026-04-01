@@ -1,0 +1,26 @@
+[
+    {
+        "name": "cam1",
+        "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/loitering.mp4",
+        "camera_id": "cam_001_b4b5",
+        "status": "active"
+    },
+    {
+        "name": "cam3",
+        "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/fighting.mp4",
+        "camera_id": "cam_002_f645",
+        "status": "active"
+    },
+    {
+        "name": "cam5",
+        "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/running.mp4",
+        "camera_id": "cam_003_e92c",
+        "status": "active"
+    },
+    {
+        "name": "bala",
+        "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/bala.mp4",
+        "camera_id": "cam_004_1590",
+        "status": "active"
+    }
+]

@@ -3,15 +3,19 @@ import cv2
 import numpy as np
 from .detector import FaceDetector
 from .embeddings import FaceNetModel
-from .database import EmbeddingDatabase
+from .database import load_faces, save_faces, add_new_person, get_db
 
-def rebuild(known_faces_dir="known_faces", db_path="embeddings.pkl", device='cpu'):
+def rebuild(known_faces_dir="known_faces", device='cpu'):
     """
-    Scans directory for images and generates FaceNet embeddings.
+    Scans directory for images and generates embeddings in the JSON database format.
     """
     detector = FaceDetector(device=device)
     model = FaceNetModel(device=device)
-    db = EmbeddingDatabase(storage_path=db_path)
+    db = get_db()
+    
+    # Reset current database representation for clean rebuild? 
+    # Or just append. Rebuild usually suggests clearing.
+    db.faces = [] 
     
     if not os.path.exists(known_faces_dir):
         os.makedirs(known_faces_dir)
@@ -31,24 +35,33 @@ def rebuild(known_faces_dir="known_faces", db_path="embeddings.pkl", device='cpu
                 
             # Use detector to find face for cropping
             boxes, probs = detector.detect(image)
-            if boxes is not None and len(boxes) > 0:
-                # Use best face
-                box = boxes[0]
+            # Find a face with at least 0.5 probability (lowered for registration)
+            found = False
+            for i in range(len(boxes)):
+                if probs[i] > 0.5:
+                    box = boxes[i]
+                    found = True
+                    break
+            
+            if found:
                 x1, y1, x2, y2 = map(int, box)
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(image.shape[1], x2), min(image.shape[0], y2)
                 face_crop = image[y1:y2, x1:x2]
                 
                 if face_crop.size > 0:
                     embedding = model.get_embedding(face_crop)
                     if embedding is not None:
-                        db.add_embedding(name, embedding)
-                        print(f"Added embedding for: {name}")
+                        # Required: add_new_person(name: str, embedding: list) -> dict
+                        add_new_person(name, embedding)
+                        print(f"Registered identity: {name}")
                 else:
                     print(f"Error cropping {filename}. Skipping.")
             else:
                 print(f"No faces found in {filename}. Skipping.")
                 
-    db.save()
-    print("Database rebuilding complete.")
+    db.save_faces()
+    print("Database rebuilding (JSON) complete.")
 
 if __name__ == "__main__":
     rebuild()

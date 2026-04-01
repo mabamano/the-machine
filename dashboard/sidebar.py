@@ -32,17 +32,17 @@ class Sidebar(QWidget):
         self.layout.setSpacing(5)
         
         # Logo Area
-        self.logo = QLabel("🛡️ SURVEILLANCE")
+        self.logo = QLabel("SYSTEM GUARDIAN")
         self.logo.setAlignment(Qt.AlignCenter)
-        self.logo.setStyleSheet("color: #00ffcc; font-size: 20px; font-weight: bold; margin-bottom: 30px;")
+        self.logo.setStyleSheet("color: #00ffcc; font-size: 18px; font-weight: bold; letter-spacing: 2px; margin-bottom: 30px;")
         self.layout.addWidget(self.logo)
         
         # Navigation Buttons
         self.buttons = []
-        self.btn_dashboard = SidebarButton("Dashboard", "📊")
-        self.btn_cameras = SidebarButton("Cameras", "📷")
-        self.btn_find = SidebarButton("Find Someone", "🔍")
-        self.btn_anomalies = SidebarButton("Anomalies", "⚠️")
+        self.btn_dashboard = SidebarButton("Dashboard", "")
+        self.btn_cameras = SidebarButton("Cameras", "")
+        self.btn_find = SidebarButton("Person Search", "")
+        self.btn_anomalies = SidebarButton("Anomalies", "")
         
         self.buttons.extend([self.btn_dashboard, self.btn_cameras, self.btn_find, self.btn_anomalies])
         
@@ -53,7 +53,7 @@ class Sidebar(QWidget):
         self.layout.addStretch(1)
         
         # Logout footer
-        self.btn_logout = QPushButton("🚪 Logout")
+        self.btn_logout = QPushButton("LOGOUT SESSION")
         self.btn_logout.setStyleSheet("""
             QPushButton { 
                 background-color: transparent; color: #777; border-top: 1px solid #222; 

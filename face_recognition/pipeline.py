@@ -101,13 +101,11 @@ class FaceRecognitionPipeline:
                     "confidence": score
                 })
             else:
-                # IF NO match -> create new person_id + append embedding + persist
-                # We'll label them as "Individual_XXX" if no name provided
-                # Actually, USER_REQUEST: "IF no match -> create new person_id"
-                new_person = add_new_person(name="Unknown", embedding=embedding)
+                # Optimized: Do NOT auto-register Unknown for every frame.
+                # Only return as unknown without persisting to database.
                 results.append({
-                    "person_id": new_person["person_id"],
-                    "name": new_person["name"],
+                    "person_id": "None",
+                    "name": "Unknown",
                     "box": box,
                     "confidence": score
                 })

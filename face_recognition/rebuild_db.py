@@ -35,9 +35,15 @@ def rebuild(known_faces_dir="known_faces", device='cpu'):
                 
             # Use detector to find face for cropping
             boxes, probs = detector.detect(image)
-            if len(boxes) > 0:
-                # Use best face
-                box = boxes[0]
+            # Find a face with at least 0.5 probability (lowered for registration)
+            found = False
+            for i in range(len(boxes)):
+                if probs[i] > 0.5:
+                    box = boxes[i]
+                    found = True
+                    break
+            
+            if found:
                 x1, y1, x2, y2 = map(int, box)
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(image.shape[1], x2), min(image.shape[0], y2)

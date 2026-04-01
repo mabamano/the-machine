@@ -151,12 +151,12 @@ class SmartSurveillanceSystem(QObject):
         from face_recognition.main import search_person
         print(f"Searching for target in image: {image_path}")
         
-        # 1. Matcher: find_best_match(embedding: list, db: list) -> (person_id, name, score)
-        # Required by USER_REQUEST Problem 1
         result = search_person(image_path)
-        
-        # 2. Result Frame fix: Do NOT display uploaded image as match result
-        # Returning dictionary to UI to display metadata instead
+        if result["status"] == "match":
+            print(f"Match Found: {result['name']} ({result['person_id']}) with confidence {result['confidence']*100:.1f}%")
+        else:
+            print(f"No match found. Best score was {(result.get('confidence', 0))*100:.1f}%")
+            
         self.dashboard_mod.main_win.view_find.search_completed.emit(result)
 
     @Slot(object, list)

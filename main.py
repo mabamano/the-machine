@@ -148,10 +148,16 @@ class SmartSurveillanceSystem(QObject):
 
     @Slot(str)
     def on_search_triggered(self, image_path):
-        # Extract name from image path or ask user (currently using filename)
-        name = os.path.splitext(os.path.basename(image_path))[0]
-        print(f"Adding new target for matching: {name}")
-        self.recognition_mod.add_target_person(name, image_path)
+        from face_recognition.main import search_person
+        print(f"Searching for target in image: {image_path}")
+        
+        # 1. Matcher: find_best_match(embedding: list, db: list) -> (person_id, name, score)
+        # Required by USER_REQUEST Problem 1
+        result = search_person(image_path)
+        
+        # 2. Result Frame fix: Do NOT display uploaded image as match result
+        # Returning dictionary to UI to display metadata instead
+        self.dashboard_mod.main_win.view_find.search_completed.emit(result)
 
     @Slot(object, list)
     def on_frame_ready(self, frame, alerts):

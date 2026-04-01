@@ -8,6 +8,7 @@ import numpy as np
 
 class FindView(QWidget):
     search_triggered = Signal(str) # Path to the search image
+    search_completed = Signal(dict) # Results from the backend
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -60,6 +61,7 @@ class FindView(QWidget):
         self.progress.setVisible(False)
         self.q_layout.addWidget(self.progress)
         
+        self.search_completed.connect(self._show_mock_results)
         self.main_row.addWidget(self.query_panel)
         
         # Right Panel: Results
@@ -98,10 +100,8 @@ class FindView(QWidget):
         # Notify the rest of the system about the new target
         self.search_triggered.emit(self.current_img_path)
         
-        # Display results instantly
-        self.progress.setVisible(False)
-        self.btn_search.setEnabled(True)
-        self._show_mock_results()
+        # Display progress or message (Results will come via signal)
+        self.grid_layout.addWidget(QLabel("Searching..."), 0, 0)
 
     def _update_progress(self):
         val = self.progress.value() + 5
@@ -112,43 +112,39 @@ class FindView(QWidget):
             self.btn_search.setEnabled(True)
             self._show_mock_results()
 
-    def _show_mock_results(self):
+    def _show_mock_results(self, result):
         # Clear previous results first
         for i in reversed(range(self.grid_layout.count())): 
             self.grid_layout.itemAt(i).widget().setParent(None)
 
-        # Create localized result items
-        for i in range(4):
-            res_item = QFrame()
-            res_item.setFixedSize(160, 190)
-            
-            # Highlight the first one as a definite match
-            if i == 0:
-                res_item.setStyleSheet("background-color: #002244; border: 2px solid #0088ff; border-radius: 12px;")
-                status_text = "MATCH DETECTED"
-                status_color = "#00ffff"
-                confidence = "99.8%"
-            else:
-                res_item.setStyleSheet("background-color: #1a1a1a; border: 1px solid #333; border-radius: 12px;")
-                status_text = f"PROBABLE: CAM_0{i+1}"
-                status_color = "#888"
-                confidence = f"9{9-i}.2%"
+        if result["status"] == "no_match":
+            no_match = QLabel("NO MATCH FOUND")
+            no_match.setStyleSheet("color: #ff4444; font-size: 18px; font-weight: bold;")
+            no_match.setAlignment(Qt.AlignCenter)
+            self.grid_layout.addWidget(no_match, 0, 0, 1, 2)
+            return
 
-            l = QVBoxLayout(res_item)
-            l.setContentsMargins(10, 10, 10, 10)
-            
-            img = QLabel()
-            img.setPixmap(QPixmap(self.current_img_path).scaled(130, 130, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            img.setAlignment(Qt.AlignCenter)
-            img.setStyleSheet("border-radius: 5px;")
-            
-            info = QLabel(f"<div style='text-align: center;'><b style='color: {status_color};'>{status_text}</b><br>"
-                          f"<span style='color: #00ffcc; font-size: 14px;'>{confidence}</span></div>")
-            info.setStyleSheet("font-size: 11px;")
-            
-            l.addWidget(img)
-            l.addWidget(info)
-            self.grid_layout.addWidget(res_item, i // 2, i % 2)
+        # Create localized result item for match
+        res_item = QFrame()
+        res_item.setFixedSize(300, 150)
+        res_item.setStyleSheet("background-color: #002244; border: 2px solid #0088ff; border-radius: 12px;")
+        
+        l = QVBoxLayout(res_item)
+        l.setContentsMargins(15, 15, 15, 15)
+        
+        match_title = QLabel("MATCH DETECTED: ACTIVE DATABASE")
+        match_title.setStyleSheet("color: #00ffff; font-weight: bold; font-size: 14px;")
+        l.addWidget(match_title)
+        
+        name_info = QLabel(f"<span style='color: #fff; font-size: 20px;'>{result['name']}</span>")
+        conf_info = QLabel(f"<span style='color: #00ffcc;'>Confidence: {result['confidence']*100:.1f}%</span>")
+        source_info = QLabel(f"<span style='color: #888;'>Source: Active Surveillance Feed</span>")
+        
+        l.addWidget(name_info)
+        l.addWidget(conf_info)
+        l.addWidget(source_info)
+        
+        self.grid_layout.addWidget(res_item, 0, 0, 1, 2)
 
 if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication

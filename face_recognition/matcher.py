@@ -2,63 +2,63 @@ import numpy as np
 from scipy.spatial.distance import euclidean, cosine
 
 class Matcher:
-    def __init__(self, threshold=0.8, distance_metric='euclidean'):
-        """
-        threshold: distance threshold for matching. 
-                   Below this value (for distance) or above (for similarity) is a match.
-        distance_metric: 'euclidean' or 'cosine'
-        """
-        self.threshold = threshold
-        self.distance_metric = distance_metric
+    def __init__(self, cosine_min=0.6, l2_max=1.0):
+        # We'll use these thresholds to validate matches
+        self.cosine_min = cosine_min
+        self.l2_max = l2_max
 
-    def compare(self, embedding1, embedding2):
+    def is_valid_match(self, score, metric='cosine'):
         """
-        Compares two embeddings using the selected metric.
-        Returns distance.
+        Validates match based on threshold.
         """
-        if self.distance_metric == 'euclidean':
-            return euclidean(embedding1, embedding2)
-        elif self.distance_metric == 'cosine':
-            return cosine(embedding1, embedding2)
-        else:
-            raise ValueError(f"Unknown distance metric: {self.distance_metric}")
+        if metric == 'cosine':
+            return score >= self.cosine_min
+        elif metric == 'l2':
+            return score <= self.l2_max
+        return False
 
-    def find_best_match(self, query_embedding, database_embeddings):
+    def find_best_match(self, query_embedding, database_faces):
         """
-        Finds the best match from a database.
-        database_embeddings: {name: [embedding1, embedding2, ...]}
+        Finds the best matching profile in the database.
+        database_faces: list of dicts (the format of faces.json)
+        Returns: (person_id, name, score) or (None, "Unknown", 0.0)
         """
-        best_match = "Unknown"
-        min_dist = float('inf')
+        best_id = "None"
+        best_name = "Unknown"
+        max_similarity = -1.0
         
-        for name, embeddings in database_embeddings.items():
-            for known_emb in embeddings:
-                dist = self.compare(query_embedding, known_emb)
-                if dist < min_dist:
-                    min_dist = dist
-                    best_match = name
+        # Ensure query embedding is ready for comparison
+        q_emb = np.array(query_embedding).flatten()
+        
+        for person in database_faces:
+            p_id = person.get("person_id")
+            p_name = person.get("name")
+            
+            # Person can have multiple embeddings for robustness
+            p_embs = person.get("embeddings", [])
+            
+            for emb_data in p_embs:
+                p_emb = np.array(emb_data).flatten()
+                
+                # Use Cosine Similarity (1 - cosine distance)
+                # Cosine distance ranges [0, 2], so 1 - dist ranges [-1, 1]
+                sim = 1.0 - cosine(q_emb, p_emb)
+                
+                if sim > max_similarity:
+                    max_similarity = sim
+                    best_id = p_id
+                    best_name = p_name
                     
-        if min_dist <= self.threshold:
-            # Confidence calculation for Euclidean (normalized roughly)
-            confidence = max(0, 100 * (1 - min_dist / self.threshold))
-            return best_match, confidence
-        
-        return "Unknown", 0.0
+        # Apply validation threshold
+        if self.is_valid_match(max_similarity, metric='cosine'):
+            return best_id, best_name, max_similarity
+            
+        return "None", "Unknown", max_similarity
 
-if __name__ == "__main__":
-    # Test Matcher
-    matcher = Matcher(threshold=0.8, distance_metric='euclidean')
-    
-    # Dummy data
-    e1 = np.ones(512)
-    e2 = np.ones(512) + 0.1
-    e3 = np.random.rand(512)
-    
-    db = {"Alice": [e1], "Bob": [e2]}
-    
-    res, conf = matcher.find_best_match(e1, db)
-    print(f"Match: {res}, Confidence: {conf:.2f}%")
-    
-    # Alice and Bob's distances to Alice's embedding
-    print(f"Distance to Alice: {matcher.compare(e1, e1)}")
-    print(f"Distance to Bob (e2): {matcher.compare(e1, e2)}")
+# Instance helper for global access
+def find_best_match(embedding, db):
+    matcher = Matcher()
+    return matcher.find_best_match(embedding, db)
+
+def is_valid_match(score):
+    return Matcher().is_valid_match(score)

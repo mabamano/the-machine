@@ -35,19 +35,27 @@ class FaceRecognitionModule:
                         
         return results
 
-def test_module():
+def test_module(video_path=None):
     """
     Stand-alone test/demo for the face recognition module.
     """
     module = FaceRecognitionModule()
-    cap = cv2.VideoCapture(0)
     
-    print("Starting Face Recognition Module Test. Press 'q' to quit.")
+    if video_path:
+        cap = cv2.VideoCapture(video_path)
+    else:
+        # Placeholder Mode
+        print("Testing with dummy frames (MOCK MODE).")
+        cap = None
     
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        if cap:
+            ret, frame = cap.read()
+            if not ret: break
+        else:
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(frame, "RECOGNITION DUMMY FEED", (150, 240), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             
         recognitions = module.recognize_faces(frame)
         

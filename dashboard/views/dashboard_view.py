@@ -77,6 +77,12 @@ class DashboardView(QWidget):
         card = AlertCard(alert_type, message, severity=severity)
         self.scroll_layout.insertWidget(0, card)
         
+        # Limit alert history to 50 for performance
+        if self.scroll_layout.count() > 50:
+            last_item = self.scroll_layout.takeAt(self.scroll_layout.count() - 1)
+            if last_item.widget():
+                last_item.widget().deleteLater()
+        
         # Update alert count (Simulated increment)
         current = int(self.alerts_box.findChildren(QLabel)[0].text())
         self.alerts_box.findChildren(QLabel)[0].setText(str(current + 1))

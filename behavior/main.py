@@ -1,34 +1,61 @@
 import time
 import random
-from .loitering import LoiteringDetector, ZoneViolationDetector
+from .loitering import LoiteringDetector, IntrusionDetector
+from .action_analyzer import ActionAnalyzer
 
 class BehaviorModule:
-    def __init__(self, loitering_time=30.0, zone_rect=None):
+    def __init__(self, loitering_time=30.0, intrusion_roi=None):
         self.loitering_detector = LoiteringDetector(time_limit=loitering_time)
-        self.zone_detector = ZoneViolationDetector(zone_rect=zone_rect)
+        self.intrusion_detector = IntrusionDetector(roi_rect=intrusion_roi)
+        self.pose_detector = ActionAnalyzer()
+        
+        # Cooldown management: { (track_id, alert_type): last_time }
+        self.last_alerts = {}
+        self.cooldown = 10.0 # 10 seconds between same alerts
 
     def analyze_behavior(self, tracking_data):
         """
-        tracking_data: {track_id: {bbox: [x1, y1, x2, y2], centroid: [cx, cy]}}
+        tracking_data: {track_id: {bbox: [x1, y1, x2, y2], centroid: [cx, cy], keypoints: [[x,y,conf], ...]}}
         Returns: list of alerts.
         """
-        tracked_ids = list(tracking_data.keys())
+        current_time = time.time()
+        raw_alerts = []
         
         # 1. Update loitering
-        loitering_alerts = self.loitering_detector.update(tracked_ids)
+        raw_alerts += self.loitering_detector.update(tracking_data)
         
-        # 2. Update zone violations
-        # Extract centroids for zone checks
-        centroids = {tid: data['centroid'] for tid, data in tracking_data.items()}
-        zone_alerts = self.zone_detector.update(centroids)
+        # 2. Update intrusions
+        raw_alerts += self.intrusion_detector.update(tracking_data)
         
-        return loitering_alerts + zone_alerts
+        # 3. Update Pose-based behaviors
+        action_output = self.pose_detector.analyze_actions(tracking_data, current_time)
+        for res in action_output.get("results", []):
+            if res["action"] != "none":
+                raw_alerts.append({
+                    "alert": f"{res['action']} Detected",
+                    "type": res["action"],
+                    "person_id": res["track_id"],
+                    "timestamp": current_time,
+                    "confidence": res.get("confidence", 0.0)
+                })
+        
+        # 4. Filter through Cooldown
+        filtered_alerts = []
+        for alert in raw_alerts:
+            key = (alert['person_id'], alert['type'])
+            if key not in self.last_alerts or (current_time - self.last_alerts[key] > self.cooldown):
+                self.last_alerts[key] = current_time
+                # Ensure 'alert' field exists for UI compatibility
+                if 'alert' not in alert: alert['alert'] = f"{alert['type']} Detected"
+                filtered_alerts.append(alert)
+                
+        return filtered_alerts
 
 def simulator():
     """
     Mock data sim for behavior analysis.
     """
-    module = BehaviorModule(loitering_time=5.0, zone_rect=(50, 50, 150, 150))
+    module = BehaviorModule(loitering_time=5.0, intrusion_roi=(50, 50, 150, 150))
     print("Starting Behavior Module Simulator. Press Ctrl+C to stop.")
     
     # Simple simulated state

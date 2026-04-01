@@ -1,5 +1,8 @@
 import sys
+import cv2
+import numpy as np
 from PySide6.QtWidgets import QApplication, QStackedWidget
+from PySide6.QtCore import QTimer
 from .login import LoginWindow
 from .main_window import MainWindow
 
@@ -46,14 +49,38 @@ class DashboardModule:
         """
         # Pass to the dashboard overview
         self.main_win.view_dashboard.update_frame(frame)
+        
+        # Also pass to the camera management view if active (or just always for simplicity)
+        self.main_win.view_cameras.player.update_frame(frame)
+
         if alerts:
             for alert in alerts:
                 # Add to overview screen
                 self.main_win.view_dashboard.add_alert(alert['type'], f"{alert['alert']} ({alert['person_id']})")
-                # Add to anomalies screen
-                self.main_win.view_anomalies.add_anomaly_alert(alert['type'], f"{alert['alert']} for {alert['person_id']}")
+                
+                # Capture a snapshot for the anomalies screen
+                snapshot = frame.copy()
+                # Add to anomalies screen with snapshot
+                self.main_win.view_anomalies.add_anomaly_alert(
+                    alert['type'], 
+                    f"{alert['alert']} for {alert['person_id']}",
+                    severity="High",
+                    snapshot=snapshot
+                )
 
 if __name__ == "__main__":
     module = DashboardModule()
-    # Simple simulated loop for testing if needed
+    
+    # Standalone Test Simulation (NO WEBCAM)
+    def simulate():
+        # Consistent placeholder for mock mode
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.putText(frame, "DASHBOARD MOCK MODE", (150, 240), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 204), 2)
+        module.update_display(frame)
+        
+    timer = QTimer()
+    timer.timeout.connect(simulate)
+    timer.start(33) # ~30 FPS
+    
     module.run()

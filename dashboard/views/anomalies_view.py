@@ -19,7 +19,7 @@ class AnomaliesView(QWidget):
         
         # Filter dropdown
         self.filter = QComboBox()
-        self.filter.addItems(["All Types", "Loitering", "Zone Violation", "Intrusion"])
+        self.filter.addItems(["All Types", "Loitering", "Zone Violation", "Intrusion", "Running", "Fighting", "Fell Down"])
         self.filter.setStyleSheet("""
             QComboBox { background-color: #333; color: #fff; padding: 10px; border-radius: 5px; min-width: 150px; }
             QComboBox QAbstractItemView { background-color: #333; color: #fff; }
@@ -68,11 +68,37 @@ class AnomaliesView(QWidget):
         
         self.layout.addWidget(self.splitter)
 
-    @Slot(str, str, str)
-    def add_anomaly_alert(self, alert_type, message, severity="High"):
-        card = AlertCard(alert_type, message, severity=severity)
-        # For simplicity, just add to layout. In real app, connect signals.
+    @Slot(str, str, str, object)
+    def add_anomaly_alert(self, alert_type, message, severity="High", snapshot=None):
+        card = AlertCard(alert_type, message, severity=severity, snapshot=snapshot)
+        card.clicked.connect(self._show_snapshot)
         self.alert_list_layout.insertWidget(0, card)
+        
+        # Limit history to 50
+        if self.alert_list_layout.count() > 50:
+            last = self.alert_list_layout.takeAt(self.alert_list_layout.count() - 1)
+            if last.widget():
+                last.widget().deleteLater()
+
+    @Slot(object)
+    def _show_snapshot(self, frame):
+        if frame is None:
+            self.snap_img.setText("No snapshot available for this alert")
+            return
+            
+        import cv2
+        from PySide6.QtGui import QImage, QPixmap
+        
+        # Process preview image
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb.shape
+        bytes_per_line = ch * w
+        qt_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_img)
+        
+        # Scale to fit label while maintaining aspect ratio
+        scaled_pixmap = pixmap.scaled(self.snap_img.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.snap_img.setPixmap(scaled_pixmap)
 
 if __name__ == "__main__":
     from PySide6.QtWidgets import QApplication

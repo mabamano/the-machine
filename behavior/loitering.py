@@ -3,80 +3,67 @@ from collections import defaultdict
 
 class LoiteringDetector:
     def __init__(self, time_limit=30.0):
-        """
-        time_limit: time in seconds to trigger loitering alert.
-        """
-        self.occupants = {}  # {person_id: entry_time}
+        self.occupants = {}  # {person_id: {'entry_time': t, 'last_pos': (x,y), 'still_start': t}}
         self.time_limit = time_limit
-        self.alerts = []
 
-    def update(self, tracked_ids):
-        """
-        tracked_ids: list of person IDs currently in the scene.
-        """
+    def update(self, tracking_data):
         current_time = time.time()
+        alerts = []
         
-        # New entrants
-        for pid in tracked_ids:
+        # Track IDs in current frame
+        current_ids = list(tracking_data.keys())
+        
+        # 1. Update occupants
+        for pid in current_ids:
+            pos = tracking_data[pid]['centroid']
             if pid not in self.occupants:
-                self.occupants[pid] = current_time
+                self.occupants[pid] = {'entry_time': current_time, 'last_pos': pos, 'still_start': current_time}
+            else:
+                # Check if moved
+                prev_pos = self.occupants[pid]['last_pos']
+                dist = ((pos[0]-prev_pos[0])**2 + (pos[1]-prev_pos[1])**2)**0.5
+                if dist > 5.0: # Significant movement
+                    self.occupants[pid]['still_start'] = current_time
+                    self.occupants[pid]['last_pos'] = pos
                 
-        # Handle those who left (potential cleanup)
-        to_remove = []
-        for pid in self.occupants:
-            if pid not in tracked_ids:
-                # Need an "absent" counter to avoid jitter removal
-                # For simplicity, we remove immediately
-                to_remove.append(pid)
+                # Check duration of being "still"
+                still_duration = current_time - self.occupants[pid]['still_start']
+                if still_duration > self.time_limit:
+                    alerts.append({
+                        "alert": "Loitering Detected",
+                        "type": "Loitering",
+                        "person_id": pid,
+                        "details": f"Stationary for {still_duration:.1f}s"
+                    })
+                    
+        # Cleanup
+        to_remove = [pid for pid in self.occupants if pid not in current_ids]
         for pid in to_remove:
             del self.occupants[pid]
             
-        # Check for loitering
-        alerts = []
-        for pid, entry_time in self.occupants.items():
-            duration = current_time - entry_time
-            if duration > self.time_limit:
-                alerts.append({
-                    "alert": "Suspicious Activity",
-                    "type": "Loitering",
-                    "person_id": pid,
-                    "duration": f"{duration:.1f}s"
-                })
         return alerts
 
-class ZoneViolationDetector:
-    def __init__(self, zone_rect=None):
+class IntrusionDetector:
+    def __init__(self, roi_rect=None):
         """
-        zone_rect: (x1, y1, x2, y2)
+        roi_rect: (x1, y1, x2, y2)
         """
-        self.zone_rect = zone_rect
+        self.roi_rect = roi_rect
 
-    def check_violation(self, person_coords):
-        """
-        person_coords: (x, y) - typically the bottom-center of bounding box.
-        """
-        if self.zone_rect is None:
-            return False
+    def update(self, tracking_data):
+        if not self.roi_rect:
+            return []
             
-        zx1, zy1, zx2, zy2 = self.zone_rect
-        px, py = person_coords
-        
-        if zx1 <= px <= zx2 and zy1 <= py <= zy2:
-            return True
-        return False
-
-    def update(self, tracked_objects):
-        """
-        tracked_objects: {person_id: (x, y)}
-        """
         alerts = []
-        for pid, (px, py) in tracked_objects.items():
-            if self.check_violation((px, py)):
+        rx1, ry1, rx2, ry2 = self.roi_rect
+        for pid, data in tracking_data.items():
+            px, py = data['centroid']
+            if rx1 <= px <= rx2 and ry1 <= py <= ry2:
                 alerts.append({
-                    "alert": "Suspicious Activity",
-                    "type": "Zone Violation",
+                    "alert": "Restricted Area Access",
+                    "type": "Intrusion",
                     "person_id": pid,
-                    "location": f"({int(px)}, {int(py)})"
+                    "details": f"In ROI at ({int(px)}, {int(py)})"
                 })
         return alerts
 

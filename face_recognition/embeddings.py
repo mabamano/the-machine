@@ -18,7 +18,11 @@ class FaceNetModel:
         face_rgb = cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB)
         
         # MTCNN can resize and normalize for FaceNet
-        face_tensor = self.mtcnn(face_rgb)
+        try:
+            face_tensor = self.mtcnn(face_rgb)
+        except Exception:
+            # MTCNN internally crashes on some images where no candidates are found
+            return None
         
         if face_tensor is None:
             return None

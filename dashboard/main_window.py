@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
         t_l.addStretch(1)
         
         # User Info
-        self.user_label = QLabel("👤 Administrator")
+        self.user_label = QLabel("ADMINISTRATOR")
         self.user_label.setStyleSheet("color: #888; margin-right: 15px;")
         t_l.addWidget(self.user_label)
         

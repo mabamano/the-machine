@@ -67,7 +67,7 @@ class DashboardView(QWidget):
         v_label.setStyleSheet(f"font-size: 28px; font-weight: bold; color: {color};")
         
         l_label = QLabel(label)
-        l_label.setStyleSheet("font-size: 14px; color: #777;")
+        l_label.setStyleSheet("font-size: 14px; color: #aaaaaa;")
         
         layout.addWidget(v_label, alignment=Qt.AlignCenter)
         layout.addWidget(l_label, alignment=Qt.AlignCenter)

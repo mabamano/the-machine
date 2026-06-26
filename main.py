@@ -10,6 +10,7 @@ from face_recognition.main import FaceRecognitionModule
 from behavior.main import BehaviorModule
 from dashboard.main import DashboardModule
 from camera_storage import load_cameras
+from utils.email_notifier import notifier
 
 # Ensure Ctrl+C shuts down the app
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -162,6 +163,15 @@ class SmartSurveillanceSystem(QObject):
     @Slot(object, list)
     def on_frame_ready(self, frame, alerts):
         self.dashboard_mod.update_display(frame, alerts)
+        
+        # Send Email Alerts if any new ones are detected
+        for alert in alerts:
+            notifier.send_alert(
+                alert_type=alert['type'], 
+                person_id=alert.get('person_id', 'Unknown'), 
+                timestamp=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            )
+
         if self.worker.frame_count % 30 == 0:
             self.dashboard_mod.main_win.view_dashboard.update_stats(2, 0)
 

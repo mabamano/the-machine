@@ -39,7 +39,7 @@ class FindView(QWidget):
         self.img_preview = QLabel("IMAGE PREVIEW")
         self.img_preview.setAlignment(Qt.AlignCenter)
         self.img_preview.setFixedSize(300, 300)
-        self.img_preview.setStyleSheet("background-color: #121212; border: 2px dashed #444; border-radius: 8px; color: #555;")
+        self.img_preview.setStyleSheet("background-color: #121212; border: 2px dashed #444; border-radius: 8px; color: #aaaaaa;")
         self.q_layout.addWidget(self.img_preview)
         
         self.btn_select = QPushButton("SELECT IMAGE")

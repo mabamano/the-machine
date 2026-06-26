@@ -12,7 +12,54 @@ class DashboardModule:
         if self.app is None:
             self.app = QApplication(sys.argv)
             
-        # Core Stack for Application States (Login <-> Dashboard)
+        # Apply Global Stylesheet for Better Visibility and Premium Look
+        self.app.setStyleSheet("""
+            QWidget { 
+                background-color: #0d0d0d; 
+                color: #e0e0e0; 
+                font-family: 'Segoe UI', 'Outfit', sans-serif; 
+                font-size: 14px;
+            }
+            QLabel { color: #e0e0e0; }
+            QLineEdit, QComboBox, QListWidget {
+                background-color: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 8px;
+                color: #fff;
+            }
+            QLineEdit:focus, QComboBox:focus {
+                border: 1px solid #00ffcc;
+            }
+            QPushButton {
+                background-color: #333;
+                border-radius: 8px;
+                padding: 10px 20px;
+                color: #fff;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #444;
+            }
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: #111;
+                width: 8px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: #333;
+                min-height: 20px;
+                border-radius: 4px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
         self.root_stack = QStackedWidget()
         self.root_stack.setWindowTitle("AI Smart Surveillance")
         self.root_stack.resize(1200, 800)

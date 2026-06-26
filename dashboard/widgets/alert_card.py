@@ -24,9 +24,9 @@ class AlertCard(QFrame):
             QFrame:hover {{
                 background-color: #252525;
             }}
-            QLabel {{ border: none; background: transparent; color: #e0e0e0; }}
-            #Type {{ font-weight: bold; color: {border_color}; font-size: 14px; }}
-            #Time {{ color: #777; font-size: 11px; }}
+            QLabel {{ border: none; background: transparent; color: #ffffff; }}
+            #Type {{ font-weight: bold; color: {border_color}; font-size: 15px; }}
+            #Time {{ color: #bbbbbb; font-size: 12px; }}
         """)
         
         self.setCursor(Qt.PointingHandCursor)

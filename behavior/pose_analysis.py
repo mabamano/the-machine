@@ -64,16 +64,41 @@ class PoseBehaviorDetector:
             return None
         
         current = history[-1]
+        kpts = current.get('keypoints')
+        bbox = current.get('bbox')
         
-        # 1. "Fell Down" check (Horizontal orientation)
-        x1, y1, x2, y2 = current['bbox']
+        if bbox is None or kpts is None or len(kpts) < 17:
+            return None
+
+        # 1. Improved Fall Detection Logic
+        x1, y1, x2, y2 = bbox
         w, h = x2 - x1, y2 - y1
-        is_horizontal = w > (h * 1.3)
-        kpts = current['keypoints']
-        if kpts is not None and len(kpts) > 12:
-            head_y, l_hip_y, r_hip_y = kpts[0][1], kpts[11][1], kpts[12][1]
-            if head_y > ((l_hip_y + r_hip_y)/2 - 10) and is_horizontal:
-                 return "Fell Down"
+        aspect_ratio = w / (h + 1e-6)
+        
+        # Horizontal person check
+        is_horizontal = aspect_ratio > 1.3
+        
+        # Vertical drop check (normalized coordinates usually handed by outer calls)
+        prev = list(history)[-5] if len(history) >= 5 else history[0]
+        kp_prev = prev.get('keypoints')
+        
+        if kp_prev is not None and len(kp_prev) > 0:
+            # Keypoint 0 is Nose
+            head_y_curr = kpts[0][1]
+            head_y_prev = kp_prev[0][1]
+            
+            # Keypoints 11, 12 are Hips
+            hip_y_curr = (kpts[11][1] + kpts[12][1]) / 2.0
+            
+            # Check if head is low relative to hips and if person is horizontal
+            is_head_low = head_y_curr > (hip_y_curr - 10) # 10 pixels buffer
+            
+            # Rapid drop check (assuming raw pixel coordinates here if not normalized)
+            # If normalized, 0.1 is 10% of height. If pixels, 50-100 is substantial.
+            is_dropping = (head_y_curr - head_y_prev) > 20 # Simple heuristic
+            
+            if is_horizontal and (is_head_low or is_dropping):
+                 return "Fall"
 
         # 2. Velocity-based Analysis (Running/Fighting)
         recent = list(history)[-10:]
@@ -87,7 +112,7 @@ class PoseBehaviorDetector:
             
             # Limb speed (Wrist/Elbow movement)
             k1, k2 = recent[i-1]['keypoints'], recent[i]['keypoints']
-            if k1 is not None and k2 is not None:
+            if k1 is not None and k2 is not None and len(k1) > 10 and len(k2) > 10:
                 # Track wrist/elbow 7,8,9,10
                 for idx in [7, 8, 9, 10]:
                     limb_motion_sum += np.sqrt((k2[idx][0]-k1[idx][0])**2 + (k2[idx][1]-k1[idx][1])**2)

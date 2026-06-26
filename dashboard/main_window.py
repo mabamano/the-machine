@@ -41,14 +41,14 @@ class MainWindow(QMainWindow):
         t_l = QHBoxLayout(self.top_bar)
         
         self.title_label = QLabel("MOCK FEED ACTIVE: DASHBOARD OVERVIEW")
-        self.title_label.setStyleSheet("color: #777; font-weight: bold; font-size: 14px;")
+        self.title_label.setStyleSheet("color: #999999; font-weight: bold; font-size: 14px;")
         t_l.addWidget(self.title_label)
         
         t_l.addStretch(1)
         
         # User Info
         self.user_label = QLabel("ADMINISTRATOR")
-        self.user_label.setStyleSheet("color: #888; margin-right: 15px;")
+        self.user_label.setStyleSheet("color: #aaaaaa; margin-right: 15px;")
         t_l.addWidget(self.user_label)
         
         self.content_layout.addWidget(self.top_bar)

@@ -13,6 +13,8 @@ class ActionAnalyzer:
         self.iou_threshold = 0.1
         self.wrist_velocity_threshold = 0.02
         self.acceleration_threshold = 0.01
+        self.fall_aspect_ratio_threshold = 1.3
+        self.fall_height_drop_threshold = 0.15
 
     def analyze_actions(self, frame_data, current_time):
         """
@@ -31,11 +33,15 @@ class ActionAnalyzer:
         
         results = []
         
-        # Evaluate running
+        # Evaluate actions for each individual
         running_candidates = []
+        fall_candidates = []
+        
         for tid in current_ids:
             buf = self.tracker.get_buffer(tid)
-            if self.detect_running(buf):
+            if self.detect_fall(buf):
+                fall_candidates.append(tid)
+            elif self.detect_running(buf):
                 running_candidates.append(tid)
 
         # Evaluate fighting (pairwise)
@@ -53,9 +59,12 @@ class ActionAnalyzer:
         # Prepare results
         for tid in current_ids:
             action = "none"
-            # Priority to fighting if bounding boxes overlap + fast wrists
+            # Priority: Fighting > Fall > Running
+            # Note: A fallen person in a fight might still be an alert
             if tid in fighting_candidates:
                 action = "Fighting"
+            elif tid in fall_candidates:
+                action = "Fall"
             elif tid in running_candidates:
                 action = "Running"
             
@@ -63,7 +72,7 @@ class ActionAnalyzer:
                 results.append({
                     "track_id": tid,
                     "action": action,
-                    "confidence": 0.8 # Placeholder confidence
+                    "confidence": 0.85 if action == "Fall" else 0.8
                 })
                 
         # Return properly wrapped format according to JSON output contract
@@ -71,6 +80,50 @@ class ActionAnalyzer:
             "timestamp": current_time,
             "results": results
         }
+
+    def detect_fall(self, buffer):
+        """
+        Detects falls based on aspect ratio, vertical velocity, and head-to-hip relation.
+        """
+        if not buffer or len(buffer) < 5:
+            return False
+            
+        latest = buffer[-1]
+        kpts = latest.get('keypoints')
+        bbox = latest.get('bbox') # [x1, y1, x2, y2]
+        
+        if bbox is None or kpts is None or len(kpts) < 17:
+            return False
+            
+        # 1. Aspect Ratio (Horizontal person)
+        w = bbox[2] - bbox[0]
+        h = bbox[3] - bbox[1]
+        aspect_ratio = w / (h + 1e-6)
+        is_horizontal = aspect_ratio > self.fall_aspect_ratio_threshold
+        
+        # 2. Vertical Drop (Normalized coordinates: 0 is top, 1 is bottom)
+        # Check current nose (0) vs some frames back
+        prev = buffer[-5] if len(buffer) >= 5 else buffer[0]
+        kpts_prev = prev.get('keypoints')
+        
+        if kpts_prev is not None and len(kpts_prev) > 0:
+            nose_curr = kpts[0][1]
+            nose_prev = kpts_prev[0][1]
+            drop = nose_curr - nose_prev
+            
+            # Rapid downward movement (positive change in Y)
+            is_dropping = drop > 0.1 # Dropped 10% of frame height within 5 frames
+            
+            # 3. Head Position Relative to Hips
+            # In a fall, the head (0) is usually below or at same height as hips (11, 12)
+            hip_y = (kpts[11][1] + kpts[12][1]) / 2.0
+            is_head_low = nose_curr > (hip_y - 0.05) # Head is not significantly above hips
+            
+            # Trigger if horizontal + head low, OR rapid drop + horizontal
+            if (is_horizontal and is_head_low) or (is_dropping and is_horizontal):
+                return True
+                
+        return False
 
     def detect_running(self, buffer):
         if not buffer or len(buffer) < 5:
@@ -85,12 +138,12 @@ class ActionAnalyzer:
             
         avg_speed_x = dist_x / len(centroids)
         
-        # 2. Periodic oscillation in ankle distance
+        # 2. Periodic oscillation in ankle distance (indicates legs moving)
         ankles_dists = []
         for f in buffer:
             kpts = f['keypoints']
             if kpts is not None and len(kpts) > 16:
-                a1, a2 = kpts[15], kpts[16]
+                a1, a2 = kpts[15], kpts[16] # Left ankle, Right ankle
                 if a1[2] > 0.3 and a2[2] > 0.3:
                     ankles_dists.append(euclidean_distance(a1[:2], a2[:2]))
             

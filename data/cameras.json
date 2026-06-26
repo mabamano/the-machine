@@ -3,13 +3,25 @@
         "name": "cam1",
         "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/loitering.mp4",
         "camera_id": "cam_001_b4b5",
-        "status": "active"
+        "status": "active",
+        "intrusion_roi": [
+            151,
+            77,
+            584,
+            164
+        ]
     },
     {
         "name": "cam3",
         "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/fighting.mp4",
         "camera_id": "cam_002_f645",
-        "status": "active"
+        "status": "active",
+        "intrusion_roi": [
+            21,
+            220,
+            47,
+            636
+        ]
     },
     {
         "name": "cam5",
@@ -21,6 +33,18 @@
         "name": "bala",
         "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/bala.mp4",
         "camera_id": "cam_004_1590",
+        "status": "active",
+        "intrusion_roi": [
+            299,
+            188,
+            299,
+            188
+        ]
+    },
+    {
+        "name": "fall",
+        "video_path": "C:/Users/mabam/OneDrive/Desktop/Face_Detection-master/the-machine/cams/fall.mp4",
+        "camera_id": "cam_005_05a1",
         "status": "active"
     }
 ]

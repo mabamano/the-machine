@@ -19,7 +19,7 @@ class AnomaliesView(QWidget):
         
         # Filter dropdown
         self.filter = QComboBox()
-        self.filter.addItems(["All Types", "Loitering", "Zone Violation", "Intrusion", "Running", "Fighting", "Fell Down"])
+        self.filter.addItems(["All Types", "Loitering", "Zone Violation", "Intrusion", "Running", "Fighting", "Fall"])
         self.filter.setStyleSheet("""
             QComboBox { background-color: #333; color: #fff; padding: 10px; border-radius: 5px; min-width: 150px; }
             QComboBox QAbstractItemView { background-color: #333; color: #fff; }
@@ -59,7 +59,7 @@ class AnomaliesView(QWidget):
         self.snap_img = QLabel("Select an alert to view snapshot")
         self.snap_img.setAlignment(Qt.AlignCenter)
         self.snap_img.setFixedSize(500, 350)
-        self.snap_img.setStyleSheet("background-color: #0d0d0d; border: 2px solid #333; border-radius: 10px; color: #555;")
+        self.snap_img.setStyleSheet("background-color: #0d0d0d; border: 2px solid #333; border-radius: 10px; color: #aaaaaa;")
         self.s_l.addWidget(self.snap_img, stretch=1)
         
         self.splitter.setStretchFactor(0, 1)
